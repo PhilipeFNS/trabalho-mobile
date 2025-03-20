@@ -5,6 +5,8 @@ export default function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+// teste para ver se comitou
+
   const handleLogin = () => {
     if (username === 'admin' && password === '1234') {
       Alert.alert('Sucesso', 'Login bem-sucedido!');
