@@ -8,11 +8,9 @@ import {
   Alert,
 } from "react-native";
 
-export default function App() {
+export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
-  // teste para ver se comitou
 
   const handleLogin = () => {
     if (username === "admin" && password === "1234") {
@@ -42,8 +40,8 @@ export default function App() {
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.forgotPassword}>Esqueci a senha</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
+          <Text style={styles.forgotPassword}>Cadastre-se</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -53,7 +51,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e0f7e9", // Verde claro
+    backgroundColor: "#e0f7e9",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -71,7 +69,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: "#2e7d32", // Verde escuro
+    color: "#2e7d32",
     marginBottom: 20,
     fontWeight: "bold",
   },
@@ -84,7 +82,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: "#2e7d32", // Verde escuro
+    backgroundColor: "#2e7d32",
     padding: 10,
     borderRadius: 5,
     width: "100%",
@@ -97,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   forgotPassword: {
-    color: "#2e7d32", // Verde escuro
+    color: "#2e7d32",
     marginTop: 10,
     fontSize: 14,
   },

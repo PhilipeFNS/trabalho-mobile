@@ -12,7 +12,7 @@ import {
 import RNPickerSelect from "react-native-picker-select";
 import { MaskedTextInput } from "react-native-mask-text";
 
-export default function App() {
+export default function CadastroScreen({ navigation }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
