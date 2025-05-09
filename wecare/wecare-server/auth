@@ -1,0 +1,57 @@
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Substitua pelo IP da sua máquina (verifique com ipconfig)
+const API_URL = "http://192.168.0.191:3000";
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Interceptor para adicionar token em cada requisição
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("@WeCare:token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const authService = {
+  login: async (email, password) => {
+    try {
+      const response = await api.post("/login", { email, password });
+      await AsyncStorage.setItem("@WeCare:token", response.data.token);
+      await AsyncStorage.setItem(
+        "@WeCare:user",
+        JSON.stringify(response.data.user)
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro no login:", error);
+      throw error;
+    }
+  },
+
+  cadastrar: async (userData) => {
+    try {
+      const response = await api.post("/usuarios", userData);
+      return response.data;
+    } catch (error) {
+      console.error("Erro no cadastro:", error);
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    await AsyncStorage.removeItem("@WeCare:token");
+    await AsyncStorage.removeItem("@WeCare:user");
+  },
+
+  getUser: async () => {
+    const userStr = await AsyncStorage.getItem("@WeCare:user");
+    return userStr ? JSON.parse(userStr) : null;
+  },
+};
+
+export default api;

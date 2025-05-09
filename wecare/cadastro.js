@@ -7,10 +7,16 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { MaskedTextInput } from "react-native-mask-text";
+import axios from "axios";
+
+const API_URL = "http://localhost:3000";
 
 export default function CadastroScreen({ navigation }) {
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -31,7 +37,7 @@ export default function CadastroScreen({ navigation }) {
 
   const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (
       !form.name ||
       !form.email ||
@@ -46,15 +52,51 @@ export default function CadastroScreen({ navigation }) {
       Alert.alert("Erro", "Preencha todos os campos obrigatórios.");
       return;
     }
+
     if (!validateEmail(form.email)) {
       Alert.alert("Erro", "E-mail inválido.");
       return;
     }
+
     if (!form.terms) {
       Alert.alert("Erro", "Você deve aceitar os termos de uso.");
       return;
     }
-    Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+
+    try {
+      setLoading(true);
+
+      const userData = {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        cpf: form.cpf.replace(/[^\d]/g, ""), // Remove máscara do CPF
+        userType: form.userType,
+        area: form.userType === "profissional" ? form.area : null,
+        dob: form.dob,
+        age: Number(form.age),
+        gender: form.gender,
+      };
+
+      const response = await axios.post(`${API_URL}/usuarios`, userData);
+
+      Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+        { text: "OK", onPress: () => navigation.navigate("Login") },
+      ]);
+    } catch (error) {
+      let message = "Erro ao fazer cadastro";
+
+      if (error.response) {
+        if (error.response.data && error.response.data.error) {
+          message = error.response.data.error;
+        }
+      }
+
+      Alert.alert("Erro", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const userTypes = [
@@ -69,78 +111,82 @@ export default function CadastroScreen({ navigation }) {
   ];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.formBox}>
-        <Text style={styles.title}>Cadastro</Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <View style={styles.formBox}>
+          <Text style={styles.title}>Cadastro</Text>
 
-        <TextInput
-          placeholder="Nome Completo"
-          value={form.name}
-          onChangeText={(v) => handleInputChange("name", v)}
-          style={styles.nameInput}
-        />
-        <TextInput
-          placeholder="E-mail"
-          value={form.email}
-          onChangeText={(v) => handleInputChange("email", v)}
-          keyboardType="email-address"
-          style={styles.emailInput}
-        />
-        <View style={styles.row}>
-          <MaskedTextInput
-            mask="(99) 99999-9999"
-            placeholder="Telefone"
-            value={form.phone}
-            onChangeText={(t) => handleInputChange("phone", t)}
-            keyboardType="numeric"
-            style={styles.phoneInput}
-          />
-          <MaskedTextInput
-            mask="999.999.999-99"
-            placeholder="CPF"
-            value={form.cpf}
-            onChangeText={(t) => handleInputChange("cpf", t)}
-            keyboardType="numeric"
-            style={styles.cpfInput}
-          />
-        </View>
-        <TextInput
-          placeholder="Senha"
-          value={form.password}
-          onChangeText={(v) => handleInputChange("password", v)}
-          secureTextEntry
-          style={styles.passwordInput}
-        />
-
-        <Text style={styles.label}>Tipo de Usuário:</Text>
-        <View style={styles.radioGroupHorizontal}>
-          {userTypes.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              style={styles.radioButton}
-              onPress={() => handleInputChange("userType", item.value)}
-            >
-              <View
-                style={[
-                  styles.radioOuter,
-                  form.userType === item.value && styles.radioSelectedOuter,
-                ]}
-              >
-                {form.userType === item.value && <View style={styles.radioInner} />}
-              </View>
-              <Text style={styles.radioLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {form.userType === "profissional" && (
           <TextInput
-            placeholder="Área de Atuação"
-            value={form.area}
-            onChangeText={(v) => handleInputChange("area", v)}
-            style={styles.areaInput}
+            placeholder="Nome Completo"
+            value={form.name}
+            onChangeText={(v) => handleInputChange("name", v)}
+            style={styles.nameInput}
           />
-        )}
+          <TextInput
+            placeholder="E-mail"
+            value={form.email}
+            onChangeText={(v) => handleInputChange("email", v)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.emailInput}
+          />
+          <View style={styles.row}>
+            <MaskedTextInput
+              mask="(99) 99999-9999"
+              placeholder="Telefone"
+              value={form.phone}
+              onChangeText={(t) => handleInputChange("phone", t)}
+              keyboardType="numeric"
+              style={styles.phoneInput}
+            />
+            <MaskedTextInput
+              mask="999.999.999-99"
+              placeholder="CPF"
+              value={form.cpf}
+              onChangeText={(t) => handleInputChange("cpf", t)}
+              keyboardType="numeric"
+              style={styles.cpfInput}
+            />
+          </View>
+          <TextInput
+            placeholder="Senha"
+            value={form.password}
+            onChangeText={(v) => handleInputChange("password", v)}
+            secureTextEntry
+            style={styles.passwordInput}
+          />
+
+          <Text style={styles.label}>Tipo de Usuário:</Text>
+          <View style={styles.radioGroupHorizontal}>
+            {userTypes.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={styles.radioButton}
+                onPress={() => handleInputChange("userType", item.value)}
+              >
+                <View
+                  style={[
+                    styles.radioOuter,
+                    form.userType === item.value && styles.radioSelectedOuter,
+                  ]}
+                >
+                  {form.userType === item.value && (
+                    <View style={styles.radioInner} />
+                  )}
+                </View>
+                <Text style={styles.radioLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {form.userType === "profissional" && (
+            <TextInput
+              placeholder="Área de Atuação"
+              value={form.area}
+              onChangeText={(v) => handleInputChange("area", v)}
+              style={styles.areaInput}
+            />
+          )}
 
           <View style={styles.row}>
             <MaskedTextInput
@@ -160,55 +206,79 @@ export default function CadastroScreen({ navigation }) {
             />
           </View>
 
-        <Text style={styles.label}>Gênero:</Text>
-        <View style={styles.radioGroupHorizontal}>
-          {genders.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              style={styles.radioButton}
-              onPress={() => handleInputChange("gender", item.value)}
-            >
-              <View
-                style={[
-                  styles.radioOuter,
-                  form.gender === item.value && styles.radioSelectedOuter,
-                ]}
+          <Text style={styles.label}>Gênero:</Text>
+          <View style={styles.radioGroupHorizontal}>
+            {genders.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={styles.radioButton}
+                onPress={() => handleInputChange("gender", item.value)}
               >
-                {form.gender === item.value && <View style={styles.radioInner} />}
-              </View>
-              <Text style={styles.radioLabel}>{item.label}</Text>
+                <View
+                  style={[
+                    styles.radioOuter,
+                    form.gender === item.value && styles.radioSelectedOuter,
+                  ]}
+                >
+                  {form.gender === item.value && (
+                    <View style={styles.radioInner} />
+                  )}
+                </View>
+                <Text style={styles.radioLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.switchContainer}>
+            <Text>Aceito os termos de uso</Text>
+            <Switch
+              value={form.terms}
+              onValueChange={(v) => handleInputChange("terms", v)}
+            />
+          </View>
+
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#2e7d32"
+              style={{ marginTop: 10 }}
+            />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Cadastrar</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          )}
 
-        <View style={styles.switchContainer}>
-          <Text>Aceito os termos de uso</Text>
-          <Switch
-            value={form.terms}
-            onValueChange={(v) => handleInputChange("terms", v)}
-          />
+          <TouchableOpacity
+            style={{ marginTop: 15, alignItems: "center" }}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text style={{ color: "#2e7d32" }}>
+              Já tem uma conta? Faça login
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Cadastrar</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#e0f7e9",
     justifyContent: "center",
     alignItems: "center",
+    padding: 10,
   },
   formBox: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    width: "90%",
+    width: "100%",
     maxWidth: 400,
     marginVertical: 10,
     shadowColor: "#000",
@@ -248,18 +318,20 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     width: "48%",
+    padding: 8,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
   },
   cpfInput: {
     width: "48%",
+    padding: 8,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
   },
   passwordInput: {
-    width: "50%",
+    width: "100%",
     padding: 8,
     borderWidth: 1,
     borderColor: "#ccc",
@@ -267,17 +339,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   areaInput: {
-    width: "85%",
+    width: "100%",
     padding: 8,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
-    marginBottom: 10,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
     marginBottom: 10,
   },
   dobInput: {
