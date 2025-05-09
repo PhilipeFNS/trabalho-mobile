@@ -148,13 +148,13 @@ app.post("/usuarios", async (req, res) => {
     const {
       name,
       email,
-      password, // Senha sem hash
+      password,
       phone,
       cpf,
       userType,
       area,
-      dob, // Data sem conversão
-      age,
+      crm,    // agora recebe crm do body
+      dob,
       gender,
     } = req.body;
 
