@@ -27,7 +27,7 @@ export default function CadastroScreen({ navigation }) {
     phone: "",
     userType: "",
     area: "",
-    crm: "", // substitui o campo "age"
+    crm: "", 
     dob: "",
     gender: "",
     terms: false,
@@ -40,7 +40,6 @@ export default function CadastroScreen({ navigation }) {
   const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
   const handleSubmit = async () => {
-    // validações básicas
     if (
       !form.name ||
       !form.email ||
@@ -74,7 +73,7 @@ export default function CadastroScreen({ navigation }) {
         cpf: form.cpf.replace(/[^\d]/g, ""),
         userType: form.userType,
         area: form.userType === "profissional" ? form.area : null,
-        crm: form.userType === "profissional" ? form.crm : null, // inclui CRM
+        crm: form.userType === "profissional" ? form.crm : null, 
         dob: form.dob,
         gender: form.gender,
       };

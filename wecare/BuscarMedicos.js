@@ -8,56 +8,15 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  ScrollView,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const medicosMock = [
-  {
-    id: 1,
-    nome: "Dra. Ana Silva",
-    especialidade: "Cardiologista",
-    crm: "12345-SP",
-    avaliacao: 4.8,
-    online: true,
-    imagem: null,
-  },
-  {
-    id: 2,
-    nome: "Dr. Carlos Mendes",
-    especialidade: "Dermatologista",
-    crm: "23456-SP",
-    avaliacao: 4.5,
-    online: false,
-    imagem: null,
-  },
-  {
-    id: 3,
-    nome: "Dra. Maria Oliveira",
-    especialidade: "Pediatra",
-    crm: "34567-SP",
-    avaliacao: 4.9,
-    online: true,
-    imagem: null,
-  },
-  {
-    id: 4,
-    nome: "Dr. Ricardo Santos",
-    especialidade: "Ortopedista",
-    crm: "45678-SP",
-    avaliacao: 4.6,
-    online: false,
-    imagem: null,
-  },
-  {
-    id: 5,
-    nome: "Dra. Juliana Alves",
-    especialidade: "Ginecologista",
-    crm: "56789-SP",
-    avaliacao: 4.7,
-    online: true,
-    imagem: null,
-  },
-];
+// Substitua pelo IP da sua máquina
+const API_URL = "http://192.168.0.36:3000";
 
 export default function BuscarMedicosScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -67,28 +26,46 @@ export default function BuscarMedicosScreen({ navigation }) {
   const [especialidadeFiltro, setEspecialidadeFiltro] = useState("");
 
   useEffect(() => {
-    // Simula busca de dados da API
-    const fetchMedicos = async () => {
-      setLoading(true);
-      try {
-        // Em uma aplicação real, aqui seria feita uma chamada à API
-        // const response = await fetch(`${API_URL}/profissionais`);
-        // const data = await response.json();
-
-        // Simulando delay de rede
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setMedicos(medicosMock);
-        setFilteredMedicos(medicosMock);
-      } catch (error) {
-        console.error("Erro ao buscar médicos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMedicos();
   }, []);
+
+  const fetchMedicos = async () => {
+    setLoading(true);
+    try {
+      console.log("Buscando profissionais no endpoint:", `${API_URL}/profissionais`);
+      
+      // Buscar dados reais da API
+      const response = await axios.get(`${API_URL}/profissionais`);
+      console.log(`Recebidos ${response.data.length} profissionais da API`);
+      
+      // Transformar dados para o formato necessário usando apenas dados do banco
+      const medicosData = response.data.map(prof => ({
+        id: prof.id,
+        nome: prof.nome,
+        especialidade: prof.area_atuacao,
+        crm: prof.crm || "Sem CRM",
+        telefone: prof.telefone || "Não informado"
+      }));
+      
+      setMedicos(medicosData);
+      setFilteredMedicos(medicosData);
+    } catch (error) {
+      console.error("Erro ao buscar profissionais:", error);
+      console.log("Error response:", error.response ? error.response.data : "Sem resposta");
+      console.log("Error status:", error.response ? error.response.status : "Sem status");
+      
+      Alert.alert(
+        "Erro",
+        `Não foi possível carregar a lista de profissionais. ${error.message}`
+      );
+      
+      // Definir uma lista vazia para não quebrar a interface
+      setMedicos([]);
+      setFilteredMedicos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (searchText || especialidadeFiltro) {
@@ -109,49 +86,42 @@ export default function BuscarMedicosScreen({ navigation }) {
   }, [searchText, especialidadeFiltro, medicos]);
 
   const renderMedicoItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.medicoCard}
-      onPress={() => navigation.navigate("Agendar", { medicoId: item.id })}
-    >
-      <View style={styles.medicoHeader}>
-        <View style={styles.avatarContainer}>
-          {item.imagem ? (
-            <Image source={{ uri: item.imagem }} style={styles.avatar} />
-          ) : (
-            <Text style={styles.avatarText}>{item.nome.charAt(0)}</Text>
-          )}
-          {item.online && <View style={styles.onlineBadge} />}
-        </View>
-
-        <View style={styles.medicoInfo}>
-          <Text style={styles.medicoNome}>{item.nome}</Text>
-          <Text style={styles.medicoEspecialidade}>{item.especialidade}</Text>
-          <Text style={styles.medicoCRM}>CRM: {item.crm}</Text>
-        </View>
-
-        <View style={styles.avaliacaoContainer}>
-          <Ionicons name="star" size={18} color="#FFD700" />
-          <Text style={styles.avaliacaoText}>{item.avaliacao}</Text>
-        </View>
+  <TouchableOpacity
+    style={styles.medicoCard}
+    onPress={() => navigation.navigate("AgendarHorario", { medicoId: item.id })}
+  >
+    <View style={styles.medicoHeader}>
+      <View style={styles.avatarContainer}>
+        <Text style={styles.avatarText}>{item.nome.charAt(0)}</Text>
       </View>
 
-      <View style={styles.medicoActions}>
-        <TouchableOpacity
-          style={styles.agendarButton}
-          onPress={() => navigation.navigate("Agendar", { medicoId: item.id })}
-        >
-          <Ionicons name="calendar" size={16} color="#fff" />
-          <Text style={styles.agendarButtonText}>Agendar Consulta</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.verPerfilButton}>
-          <Text style={styles.verPerfilText}>Ver Perfil</Text>
-        </TouchableOpacity>
+      <View style={styles.medicoInfo}>
+        <Text style={styles.medicoNome}>{item.nome}</Text>
+        <Text style={styles.medicoEspecialidade}>{item.especialidade}</Text>
+        <Text style={styles.medicoCRM}>CRM: {item.crm}</Text>
       </View>
-    </TouchableOpacity>
-  );
+    </View>
 
-  const especialidades = [...new Set(medicos.map((m) => m.especialidade))];
+    <View style={styles.medicoActions}>
+      <TouchableOpacity
+        style={styles.agendarButton}
+        onPress={() => navigation.navigate("AgendarHorario", { medicoId: item.id })}
+      >
+        <Ionicons name="calendar" size={16} color="#fff" />
+        <Text style={styles.agendarButtonText}>Agendar Consulta</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.verPerfilButton}
+        onPress={() => navigation.navigate("PerfilProfissional", { profissionalId: item.id })}
+      >
+        <Text style={styles.verPerfilText}>Ver Perfil</Text>
+      </TouchableOpacity>
+    </View>
+  </TouchableOpacity>
+);
+
+  const especialidades = [...new Set(medicos.map((m) => m.especialidade))].filter(Boolean);
 
   return (
     <View style={styles.container}>
@@ -231,9 +201,14 @@ export default function BuscarMedicosScreen({ navigation }) {
         </View>
       ) : (
         <>
-          <Text style={styles.resultCount}>
-            {filteredMedicos.length} médicos encontrados
-          </Text>
+          <View style={styles.actionBar}>
+            <Text style={styles.resultCount}>
+              {filteredMedicos.length} profissionais encontrados
+            </Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={fetchMedicos}>
+              <Ionicons name="refresh" size={20} color="#2e7d32" />
+            </TouchableOpacity>
+          </View>
           <FlatList
             data={filteredMedicos}
             renderItem={renderMedicoItem}
@@ -242,7 +217,12 @@ export default function BuscarMedicosScreen({ navigation }) {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Ionicons name="medical" size={50} color="#ccc" />
-                <Text style={styles.emptyText}>Nenhum médico encontrado</Text>
+                <Text style={styles.emptyText}>
+                  Nenhum profissional encontrado
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  Tente cadastrar um profissional primeiro
+                </Text>
               </View>
             }
           />
@@ -311,11 +291,19 @@ const styles = StyleSheet.create({
   filtroChipTextSelected: {
     color: "white",
   },
-  resultCount: {
+  actionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  resultCount: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 8,
+  },
+  refreshButton: {
+    padding: 5,
   },
   loadingContainer: {
     flex: 1,
@@ -349,28 +337,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
-    position: "relative",
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
   },
   avatarText: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#2e7d32",
-  },
-  onlineBadge: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#4CAF50",
-    borderWidth: 2,
-    borderColor: "white",
-    position: "absolute",
-    bottom: 0,
-    right: 0,
   },
   medicoInfo: {
     flex: 1,
@@ -389,16 +360,6 @@ const styles = StyleSheet.create({
   medicoCRM: {
     fontSize: 12,
     color: "#666",
-  },
-  avaliacaoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avaliacaoText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginLeft: 4,
   },
   medicoActions: {
     flexDirection: "row",
@@ -440,4 +401,10 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
+  emptySubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+  }
 });

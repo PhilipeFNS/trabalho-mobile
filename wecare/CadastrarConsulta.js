@@ -10,14 +10,17 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  Modal,
+  FlatList,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MaskedTextInput } from "react-native-mask-text";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
-const API_URL = "http://192.168.0.36:3000"; // Ajuste para o seu IP
+
+const API_URL = "http://192.168.0.36:3000"; 
 
 export default function CadastrarConsultaScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -25,7 +28,7 @@ export default function CadastrarConsultaScreen({ navigation }) {
     data: new Date(),
     horaInicio: "08:00",
     horaFim: "17:00",
-    intervalo: 30, // minutos
+    intervalo: 30,
     valor: "",
     endereco: "",
     observacoes: "",
@@ -33,8 +36,33 @@ export default function CadastrarConsultaScreen({ navigation }) {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [horarios, setHorarios] = useState([]);
+  
+  // Arrays para criar o seletor de data personalizado
+  const [meses] = useState([
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ]);
+  
+  const diasDaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-  const onChange = (event, selectedDate) => {
+  // Função para gerar dias do mês atual e próximos 2 meses
+  const gerarDiasCalendario = () => {
+    const hoje = new Date();
+    const dias = [];
+    
+    // Gerar dias para os próximos 3 meses
+    for (let i = 0; i < 90; i++) {
+      const data = new Date();
+      data.setDate(hoje.getDate() + i);
+      dias.push(data);
+    }
+    
+    return dias;
+  };
+  
+  const [diasCalendario] = useState(gerarDiasCalendario());
+
+  const onChange = (selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setForm({ ...form, data: selectedDate });
@@ -69,7 +97,6 @@ export default function CadastrarConsultaScreen({ navigation }) {
       .map(Number);
     const [horaFimHour, horaFimMinute] = horaFim.split(":").map(Number);
 
-    // Converter para minutos desde meia-noite
     let inicioMinutos = horaInicioHour * 60 + horaInicioMinute;
     const fimMinutos = horaFimHour * 60 + horaFimMinute;
 
@@ -102,58 +129,105 @@ export default function CadastrarConsultaScreen({ navigation }) {
   };
 
   const handleSubmit = async () => {
-    if (!form.data || !form.horaInicio || !form.horaFim || !form.valor) {
-      Alert.alert("Erro", "Preencha todos os campos obrigatórios");
+  if (!form.data || !form.horaInicio || !form.horaFim || !form.valor) {
+    Alert.alert("Erro", "Preencha todos os campos obrigatórios");
+    return;
+  }
+
+  if (form.intervalo < 15) {
+    Alert.alert("Erro", "O intervalo mínimo deve ser de 15 minutos");
+    return;
+  }
+
+  if (horarios.length === 0) {
+    Alert.alert("Erro", "Não foi possível gerar horários de consulta");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const token = await AsyncStorage.getItem('@WeCare:token');
+    const userDataString = await AsyncStorage.getItem('@WeCare:user');
+    
+    if (!token || !userDataString) {
+      Alert.alert("Erro", "Sessão expirada. Por favor, faça login novamente.");
       return;
     }
+    
+    const userData = JSON.parse(userDataString);
+    
+    // Enviar dados para a API
+    await axios.post(`${API_URL}/horarios-disponiveis`, {
+      profissional_id: userData.id,
+      data: form.data.toISOString().split('T')[0],
+      horario_inicio: form.horaInicio,
+      horario_fim: form.horaFim,
+      intervalo: parseInt(form.intervalo),
+      valor: parseFloat(form.valor),
+      online: form.online,
+      endereco: form.endereco,
+      observacoes: form.observacoes
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    if (form.intervalo < 15) {
-      Alert.alert("Erro", "O intervalo mínimo deve ser de 15 minutos");
-      return;
-    }
-
-    if (horarios.length === 0) {
-      Alert.alert("Erro", "Não foi possível gerar horários de consulta");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // Aqui você enviaria os dados para a API
-      // Em uma implementação real:
-
-      // const token = await AsyncStorage.getItem('@WeCare:token');
-      // const response = await axios.post(`${API_URL}/consultas/disponibilidade`, {
-      //   data: form.data.toISOString().split('T')[0],
-      //   horarios: horarios,
-      //   valor: parseFloat(form.valor),
-      //   endereco: form.endereco,
-      //   observacoes: form.observacoes,
-      //   online: form.online
-      // }, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-
-      // Simulando sucesso
-      setTimeout(() => {
-        setLoading(false);
-        Alert.alert(
-          "Sucesso",
-          "Horários de consulta cadastrados com sucesso!",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
-        );
-      }, 1500);
-    } catch (error) {
-      console.error("Erro ao cadastrar consultas:", error);
-      setLoading(false);
-      Alert.alert("Erro", "Não foi possível cadastrar os horários de consulta");
-    }
-  };
+    setLoading(false);
+    Alert.alert(
+      "Sucesso",
+      "Horários de consulta cadastrados com sucesso!",
+      [{ text: "OK", onPress: () => navigation.goBack() }]
+    );
+  } catch (error) {
+    console.error("Erro ao cadastrar consultas:", error);
+    setLoading(false);
+    Alert.alert("Erro", "Não foi possível cadastrar os horários de consulta");
+  }
+};
 
   const formatarData = (data) => {
     if (!data) return "";
     return data.toLocaleDateString("pt-BR");
+  };
+  
+  const renderCalendarItem = ({ item }) => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const isSelected = 
+      item.getDate() === form.data.getDate() && 
+      item.getMonth() === form.data.getMonth() && 
+      item.getFullYear() === form.data.getFullYear();
+    const isPast = item < hoje;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.calendarDay,
+          isSelected && styles.selectedCalendarDay,
+          isPast && styles.pastCalendarDay
+        ]}
+        onPress={() => !isPast && onChange(item)}
+        disabled={isPast}
+      >
+        <Text style={styles.calendarDayWeek}>
+          {diasDaSemana[item.getDay()]}
+        </Text>
+        <Text style={[
+          styles.calendarDayNum,
+          isSelected && styles.selectedCalendarDayText,
+          isPast && styles.pastCalendarDayText
+        ]}>
+          {item.getDate()}
+        </Text>
+        <Text style={[
+          styles.calendarDayMonth,
+          isSelected && styles.selectedCalendarDayText,
+          isPast && styles.pastCalendarDayText
+        ]}>
+          {meses[item.getMonth()].substr(0, 3)}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -175,15 +249,35 @@ export default function CadastrarConsultaScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={form.data || new Date()}
-              mode="date"
-              display="default"
-              onChange={onChange}
-              minimumDate={new Date()}
-            />
-          )}
+          {/* Modal do seletor de data personalizado */}
+          <Modal
+            visible={showDatePicker}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setShowDatePicker(false)}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalTitle}>Selecione uma Data</Text>
+                
+                <FlatList
+                  data={diasCalendario}
+                  renderItem={renderCalendarItem}
+                  keyExtractor={(item) => item.toString()}
+                  horizontal={false}
+                  numColumns={3}
+                  style={styles.calendarList}
+                />
+                
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  <Text style={styles.closeButtonText}>Fechar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
 
           <View style={styles.row}>
             <View style={styles.halfField}>
@@ -424,5 +518,87 @@ const styles = StyleSheet.create({
   },
   loading: {
     marginVertical: 20,
+  },
+  // Estilos para o seletor de data personalizado
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    width: "90%",
+    maxHeight: "80%",
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 20,
+  },
+  calendarList: {
+    width: "100%",
+  },
+  calendarDay: {
+    width: Dimensions.get("window").width * 0.25,
+    margin: 4,
+    padding: 10,
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  selectedCalendarDay: {
+    backgroundColor: "#2e7d32",
+    borderColor: "#1b5e20",
+  },
+  pastCalendarDay: {
+    backgroundColor: "#f0f0f0",
+    borderColor: "#e0e0e0",
+  },
+  calendarDayWeek: {
+    fontSize: 12,
+    color: "#666",
+  },
+  calendarDayNum: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginVertical: 2,
+  },
+  calendarDayMonth: {
+    fontSize: 12,
+    color: "#666",
+  },
+  selectedCalendarDayText: {
+    color: "white",
+  },
+  pastCalendarDayText: {
+    color: "#aaa",
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#e0e0e0",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "bold",
   },
 });

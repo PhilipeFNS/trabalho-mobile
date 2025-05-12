@@ -7,99 +7,112 @@ import {
   FlatList,
   ActivityIndicator,
   Modal,
+  ScrollView,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
-const consultasMock = [
-  {
-    id: 1,
-    pacienteNome: "João Silva",
-    pacienteIdade: 35,
-    data: "2023-08-15",
-    horario: "09:00",
-    status: "confirmada",
-    online: false,
-    telefone: "(11) 98765-4321",
-  },
-  {
-    id: 2,
-    pacienteNome: "Maria Oliveira",
-    pacienteIdade: 28,
-    data: "2023-08-15",
-    horario: "10:30",
-    status: "confirmada",
-    online: true,
-    telefone: "(11) 91234-5678",
-  },
-  {
-    id: 3,
-    pacienteNome: "Pedro Santos",
-    pacienteIdade: 42,
-    data: "2023-08-16",
-    horario: "14:00",
-    status: "pendente",
-    online: false,
-    telefone: "(11) 99876-5432",
-  },
-  {
-    id: 4,
-    pacienteNome: "Ana Ferreira",
-    pacienteIdade: 31,
-    data: "2023-08-17",
-    horario: "11:00",
-    status: "confirmada",
-    online: true,
-    telefone: "(11) 94321-8765",
-  },
-  {
-    id: 5,
-    pacienteNome: "Lucas Mendes",
-    pacienteIdade: 25,
-    data: "2023-08-18",
-    horario: "15:30",
-    status: "pendente",
-    online: false,
-    telefone: "(11) 98765-1234",
-  },
-];
+// Substitua pelo IP da sua máquina
+const API_URL = "http://192.168.0.36:3000";
 
-export default function ConsultasAgendadasScreen() {
+export default function ConsultasAgendadasScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [consultas, setConsultas] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedConsulta, setSelectedConsulta] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState("todas");
+  const [processando, setProcessando] = useState(false);
 
   useEffect(() => {
-    // Simula busca de dados da API
-    const fetchConsultas = async () => {
-      setLoading(true);
-      try {
-        // Em uma aplicação real, aqui seria feita uma chamada à API
-        // const token = await AsyncStorage.getItem('@WeCare:token');
-        // const response = await axios.get(`${API_URL}/consultas`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-
-        // Simulando delay de rede
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setConsultas(consultasMock);
-
-        // Obtém a data atual para mostrar as consultas do dia
-        const today = new Date().toISOString().split("T")[0];
-        setSelectedDate(today);
-      } catch (error) {
-        console.error("Erro ao buscar consultas:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchConsultas();
   }, []);
+
+  const fetchConsultas = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('@WeCare:token');
+      const userData = JSON.parse(await AsyncStorage.getItem('@WeCare:user'));
+      
+      if (!token || !userData) {
+        Alert.alert("Erro", "Você precisa estar logado para acessar esta função");
+        navigation.navigate('Login');
+        return;
+      }
+      
+      const profissionalId = userData.id;
+      const response = await axios.get(
+        `${API_URL}/consultas/profissional/${profissionalId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Formatar dados da resposta da API
+      const consultasFormatadas = response.data.map(consulta => ({
+        id: consulta.id,
+        pacienteNome: consulta.paciente_nome,
+        pacienteIdade: consulta.paciente_idade,
+        data: consulta.data,
+        horario: consulta.horario,
+        status: consulta.status,
+        online: consulta.online === 1,
+        telefone: consulta.paciente_telefone,
+        observacoes: consulta.observacoes,
+        valor: consulta.valor
+      }));
+      
+      setConsultas(consultasFormatadas);
+      
+      // Obtém a data atual para mostrar as consultas do dia
+      const today = new Date().toISOString().split("T")[0];
+      setSelectedDate(today);
+    } catch (error) {
+      console.error("Erro ao buscar consultas:", error);
+      Alert.alert("Erro", "Não foi possível carregar suas consultas. Tente novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const atualizarStatusConsulta = async (consultaId, novoStatus) => {
+    setProcessando(true);
+    try {
+      const token = await AsyncStorage.getItem('@WeCare:token');
+      
+      await axios.put(
+        `${API_URL}/consultas/${consultaId}/status`, 
+        { status: novoStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Atualiza localmente o status da consulta
+      setConsultas(prevConsultas => {
+        return prevConsultas.map(consulta => {
+          if (consulta.id === consultaId) {
+            return { ...consulta, status: novoStatus };
+          }
+          return consulta;
+        });
+      });
+      
+      // Se estiver vendo detalhes, atualiza também o estado dessa consulta
+      if (selectedConsulta?.id === consultaId) {
+        setSelectedConsulta({
+          ...selectedConsulta,
+          status: novoStatus
+        });
+      }
+      
+      Alert.alert("Sucesso", `Consulta ${novoStatus} com sucesso!`);
+      setModalVisible(false);
+    } catch (error) {
+      console.error("Erro ao atualizar status da consulta:", error);
+      Alert.alert("Erro", "Não foi possível atualizar o status da consulta. Tente novamente mais tarde.");
+    } finally {
+      setProcessando(false);
+    }
+  };
 
   const filteredConsultas = consultas.filter((consulta) => {
     if (selectedFilter === "todas") return true;
@@ -107,9 +120,9 @@ export default function ConsultasAgendadasScreen() {
       const today = new Date().toISOString().split("T")[0];
       return consulta.data === today;
     }
-    if (selectedFilter === "confirmadas")
-      return consulta.status === "confirmada";
-    if (selectedFilter === "pendentes") return consulta.status === "pendente";
+    if (selectedFilter === "confirmadas") return consulta.status === "confirmado";
+    if (selectedFilter === "pendentes") return consulta.status === "agendado";
+    if (selectedFilter === "concluidas") return consulta.status === "concluído";
     return true;
   });
 
@@ -119,14 +132,23 @@ export default function ConsultasAgendadasScreen() {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
     return `${day}/${month}/${year}`;
   };
 
   const statusColors = {
-    confirmada: "#4CAF50",
-    pendente: "#FFC107",
-    cancelada: "#F44336",
+    confirmado: "#4CAF50",
+    agendado: "#FFC107",
+    cancelado: "#F44336",
+    "concluído": "#2196F3"
+  };
+
+  const statusTextos = {
+    confirmado: "Confirmada",
+    agendado: "Pendente",
+    cancelado: "Cancelada",
+    "concluído": "Concluída"
   };
 
   const renderConsultaItem = ({ item }) => (
@@ -146,11 +168,11 @@ export default function ConsultasAgendadasScreen() {
           <View
             style={[
               styles.statusIndicator,
-              { backgroundColor: statusColors[item.status] },
+              { backgroundColor: statusColors[item.status] || "#999" },
             ]}
           />
           <Text style={styles.statusText}>
-            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+            {statusTextos[item.status] || item.status}
           </Text>
         </View>
       </View>
@@ -270,6 +292,25 @@ export default function ConsultasAgendadasScreen() {
               Pendentes
             </Text>
           </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              selectedFilter === "concluidas" ? styles.filterChipSelected : null,
+            ]}
+            onPress={() => setSelectedFilter("concluidas")}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === "concluidas"
+                  ? styles.filterChipTextSelected
+                  : null,
+              ]}
+            >
+              Concluídas
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -279,9 +320,14 @@ export default function ConsultasAgendadasScreen() {
         </View>
       ) : (
         <>
-          <Text style={styles.resultCount}>
-            {filteredConsultas.length} consultas encontradas
-          </Text>
+          <View style={styles.actionBar}>
+            <Text style={styles.resultCount}>
+              {filteredConsultas.length} consultas encontradas
+            </Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={fetchConsultas}>
+              <Ionicons name="refresh" size={20} color="#2e7d32" />
+            </TouchableOpacity>
+          </View>
 
           <FlatList
             data={filteredConsultas}
@@ -358,38 +404,98 @@ export default function ConsultasAgendadasScreen() {
                       : "Consulta Presencial"}
                   </Text>
                 </View>
+                {selectedConsulta.valor && (
+                  <View style={styles.appointmentDetail}>
+                    <Ionicons name="cash" size={18} color="#666" />
+                    <Text style={styles.appointmentText}>
+                      R$ {parseFloat(selectedConsulta.valor).toFixed(2).replace('.', ',')}
+                    </Text>
+                  </View>
+                )}
                 <View style={[styles.appointmentDetail, styles.statusDetail]}>
                   <View
                     style={[
                       styles.statusIndicator,
                       {
-                        backgroundColor: statusColors[selectedConsulta.status],
+                        backgroundColor: statusColors[selectedConsulta.status] || "#999",
                       },
                     ]}
                   />
                   <Text style={[styles.statusText, { fontSize: 16 }]}>
-                    {selectedConsulta.status.charAt(0).toUpperCase() +
-                      selectedConsulta.status.slice(1)}
+                    {statusTextos[selectedConsulta.status] || selectedConsulta.status}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.primaryButton]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                  <Text style={styles.primaryButtonText}>Confirmar</Text>
-                </TouchableOpacity>
+              {selectedConsulta.observacoes && (
+                <View style={styles.modalSection}>
+                  <Text style={styles.sectionTitle}>Observações</Text>
+                  <Text style={styles.observacoesText}>
+                    {selectedConsulta.observacoes}
+                  </Text>
+                </View>
+              )}
 
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.secondaryButton]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Ionicons name="close-circle" size={18} color="#F44336" />
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
-                </TouchableOpacity>
+              <View style={styles.modalActions}>
+                {selectedConsulta.status === "agendado" && (
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.primaryButton]}
+                    onPress={() => atualizarStatusConsulta(selectedConsulta.id, "confirmado")}
+                    disabled={processando}
+                  >
+                    {processando ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                        <Text style={styles.primaryButtonText}>Confirmar</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {selectedConsulta.status === "confirmado" && (
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.primaryButton, {backgroundColor: "#2196F3"}]}
+                    onPress={() => atualizarStatusConsulta(selectedConsulta.id, "concluído")}
+                    disabled={processando}
+                  >
+                    {processando ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-done-circle" size={18} color="#fff" />
+                        <Text style={styles.primaryButtonText}>Concluir</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {(selectedConsulta.status === "agendado" || selectedConsulta.status === "confirmado") && (
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.secondaryButton]}
+                    onPress={() => atualizarStatusConsulta(selectedConsulta.id, "cancelado")}
+                    disabled={processando}
+                  >
+                    {processando ? (
+                      <ActivityIndicator size="small" color="#F44336" />
+                    ) : (
+                      <>
+                        <Ionicons name="close-circle" size={18} color="#F44336" />
+                        <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+                
+                {(selectedConsulta.status === "cancelado" || selectedConsulta.status === "concluído") && (
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.fullWidthButton]}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.fullWidthButtonText}>Fechar</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -431,11 +537,20 @@ const styles = StyleSheet.create({
   filterChipTextSelected: {
     color: "white",
   },
-  resultCount: {
-    padding: 16,
+  actionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 8,
+  },
+  resultCount: {
     fontSize: 14,
     color: "#666",
+  },
+  refreshButton: {
+    padding: 5,
   },
   loadingContainer: {
     flex: 1,
@@ -444,6 +559,7 @@ const styles = StyleSheet.create({
   },
   consultasList: {
     padding: 16,
+    paddingTop: 0,
   },
   consultaCard: {
     backgroundColor: "white",
@@ -589,6 +705,11 @@ const styles = StyleSheet.create({
     color: "#333",
     marginLeft: 10,
   },
+  observacoesText: {
+    fontSize: 14,
+    color: "#333",
+    lineHeight: 20,
+  },
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -621,4 +742,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 6,
   },
+  fullWidthButton: {
+    backgroundColor: "#f5f5f5",
+    flex: 1,
+  },
+  fullWidthButtonText: {
+    color: "#333",
+    fontWeight: "bold",
+  }
 });

@@ -12,6 +12,8 @@ import AgendarConsultaScreen from "./AgendarConsulta";
 import HomeProfissionalScreen from "./HomeProfissional";
 import CadastrarConsultaScreen from "./CadastrarConsulta";
 import ConsultasAgendadasScreen from "./ConsultasAgendadas";
+import AgendarHorarioScreen from './AgendarHorario';
+
 
 const Stack = createStackNavigator();
 const PacienteTab = createBottomTabNavigator();
@@ -115,6 +117,7 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
+        <Stack.Screen name="AgendarHorario" component={AgendarHorarioScreen} options={{ headerShown: false }} />
         <Stack.Screen name="HomePaciente" component={PacienteTabNavigator} />
         <Stack.Screen
           name="HomeProfissional"

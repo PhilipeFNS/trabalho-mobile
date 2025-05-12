@@ -8,6 +8,7 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -64,6 +65,15 @@ export default function LoginScreen({ navigation }) {
   };
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('./assets/logo.png')} 
+          style={styles.logo} 
+          resizeMode="contain" 
+        />
+        <Text style={styles.logoText}>WeCare</Text>
+      </View>
+
       <View style={styles.loginBox}>
         <Text style={styles.title}>Login</Text>
         <TextInput
@@ -85,7 +95,7 @@ export default function LoginScreen({ navigation }) {
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#2e7d32"
+            color="#2e7d32"  // Mantendo a cor original
             style={{ marginTop: 10 }}
           />
         ) : (
@@ -107,9 +117,23 @@ const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e0f7e9",
+    backgroundColor: "#2e7d32",  // Voltando para a cor original do projeto
     justifyContent: "center",
     alignItems: "center",
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+  },
+  logoText: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 10,
   },
   loginBox: {
     backgroundColor: "white",
@@ -126,7 +150,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: "#2e7d32",
+    color: "#2e7d32",  // Voltando para a cor original do projeto
     marginBottom: 20,
     fontWeight: "bold",
   },
@@ -139,7 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: "#2e7d32",
+    backgroundColor: "#2e7d32",  // Voltando para a cor original do projeto
     padding: 10,
     borderRadius: 5,
     width: "100%",
@@ -152,7 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   forgotPassword: {
-    color: "#2e7d32",
+    color: "#2e7d32",  // Voltando para a cor original do projeto
     marginTop: 10,
     fontSize: 14,
   },
