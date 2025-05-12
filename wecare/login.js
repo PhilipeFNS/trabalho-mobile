@@ -67,7 +67,7 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image 
-          source={require('./assets/logo.png')} 
+          source={require('./assets/logo.jpg')} 
           style={styles.logo} 
           resizeMode="contain" 
         />
@@ -117,10 +117,18 @@ const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#2e7d32",  // Voltando para a cor original do projeto
+    backgroundColor: "#2e7d32",
     justifyContent: "center",
     alignItems: "center",
   },
+  logo: {
+  width: 150,
+  height: 150,
+  borderRadius: 75,
+  borderWidth: 3,
+  borderColor: 'white',
+},
+
   logoContainer: {
     alignItems: 'center',
     marginBottom: 30,
