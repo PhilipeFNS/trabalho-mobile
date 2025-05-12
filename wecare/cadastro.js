@@ -14,7 +14,6 @@ import { MaskedTextInput } from "react-native-mask-text";
 import axios from "axios";
 import { Picker } from "@react-native-picker/picker";
 
-// Substitua pelo IP da sua máquina
 const API_URL = "http://192.168.0.36:3000";
 
 export default function CadastroScreen({ navigation }) {
