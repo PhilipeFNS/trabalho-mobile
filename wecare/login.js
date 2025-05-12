@@ -12,64 +12,49 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Configuração do servidor - substitua pelo IP da sua máquina
-const API_URL = "http://localhost:3000"; // Ajuste para o seu IP local
+const API_URL = "http://192.168.0.36:3000";
 
 export default function LoginScreen({ navigation }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       Alert.alert("Erro", "Preencha todos os campos");
       return;
     }
 
     try {
       setLoading(true);
-      console.log(`Tentando login em: ${API_URL}/login`);
 
-      // Aqui está a correção: enviando email em vez de username
       const response = await axios.post(`${API_URL}/login`, {
-        email: username, // Alterado para corresponder ao que o servidor espera
-        password: password,
+        email,
+        password,
       });
 
-      console.log("Resposta do servidor:", response.data);
+      const { token, user } = response.data;
 
-      // Guardar token e usuário
-      await AsyncStorage.setItem("@WeCare:token", response.data.token);
-      await AsyncStorage.setItem(
-        "@WeCare:user",
-        JSON.stringify(response.data.user)
-      );
+      await AsyncStorage.setItem("@WeCare:token", token);
+      await AsyncStorage.setItem("@WeCare:user", JSON.stringify(user));
 
-      // Mensagem de sucesso e redirecionamento
-      Alert.alert("Sucesso", "Login realizado com sucesso!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Redireciona para a tela correspondente ao tipo de usuário
-            if (response.data.user.tipo === "paciente") {
-              navigation.navigate("HomePaciente");
-            } else {
-              navigation.navigate("HomeProfissional");
-            }
-          },
-        },
-      ]);
+      if (user.tipo === "paciente") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "HomePaciente" }],
+        });
+      } else if (user.tipo === "profissional") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "HomeProfissional" }],
+        });
+      }
     } catch (error) {
-      console.error("Erro no login:", error.response?.data || error.message);
+      console.error("Erro no login:", error);
 
       let message = "Erro ao fazer login";
-
-      if (error.response) {
-        if (error.response.status === 401) {
-          message = error.response.data.error || "Usuário ou senha incorretos";
-        } else {
-          message = error.response.data.error || "Erro no servidor";
-        }
+      if (error.response?.data?.error) {
+        message = error.response.data.error;
       }
 
       Alert.alert("Erro", message);
@@ -84,8 +69,8 @@ export default function LoginScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          value={username}
-          onChangeText={setUsername}
+          value={email}
+          onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
