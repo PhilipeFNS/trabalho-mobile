@@ -117,6 +117,7 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
+        <Stack.Screen name="BuscarMedicos" component={BuscarMedicosScreen} />
         <Stack.Screen name="AgendarHorario" component={AgendarHorarioScreen} options={{ headerShown: false }} />
         <Stack.Screen name="HomePaciente" component={PacienteTabNavigator} />
         <Stack.Screen

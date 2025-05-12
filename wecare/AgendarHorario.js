@@ -148,8 +148,11 @@ export default function AgendarHorarioScreen({ route, navigation }) {
           setHorarios(novaListaHorarios);
           setSelectedHorario(null);
           
-          // Verificar se MinhasConsultas existe na navegação
-          navigation.navigate('MinhasConsultas', { refresh: true });
+          // Navegar para a tela HomePaciente (tela principal)
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'HomePaciente' }],
+          });
         } 
       }]
     );

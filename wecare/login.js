@@ -67,11 +67,10 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image 
-          source={require('./assets/logo.jpg')} 
+          source={require('./assets/logo.png')} 
           style={styles.logo} 
           resizeMode="contain" 
         />
-        <Text style={styles.logoText}>WeCare</Text>
       </View>
 
       <View style={styles.loginBox}>
@@ -121,14 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logo: {
-  width: 150,
-  height: 150,
-  borderRadius: 75,
-  borderWidth: 3,
-  borderColor: 'white',
-},
-
   logoContainer: {
     alignItems: 'center',
     marginBottom: 30,

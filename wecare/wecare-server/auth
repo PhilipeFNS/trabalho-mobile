@@ -1,14 +1,12 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Substitua pelo IP da sua máquina (verifique com ipconfig)
 const API_URL = "http://192.168.0.191:3000";
 
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// Interceptor para adicionar token em cada requisição
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem("@WeCare:token");
   if (token) {

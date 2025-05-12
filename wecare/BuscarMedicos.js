@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Substitua pelo IP da sua máquina
 const API_URL = "http://192.168.0.36:3000";
 
 export default function BuscarMedicosScreen({ navigation }) {
@@ -34,11 +33,9 @@ export default function BuscarMedicosScreen({ navigation }) {
     try {
       console.log("Buscando profissionais no endpoint:", `${API_URL}/profissionais`);
       
-      // Buscar dados reais da API
       const response = await axios.get(`${API_URL}/profissionais`);
       console.log(`Recebidos ${response.data.length} profissionais da API`);
       
-      // Transformar dados para o formato necessário usando apenas dados do banco
       const medicosData = response.data.map(prof => ({
         id: prof.id,
         nome: prof.nome,
@@ -59,7 +56,6 @@ export default function BuscarMedicosScreen({ navigation }) {
         `Não foi possível carregar a lista de profissionais. ${error.message}`
       );
       
-      // Definir uma lista vazia para não quebrar a interface
       setMedicos([]);
       setFilteredMedicos([]);
     } finally {
@@ -110,7 +106,7 @@ export default function BuscarMedicosScreen({ navigation }) {
         <Ionicons name="calendar" size={16} color="#fff" />
         <Text style={styles.agendarButtonText}>Agendar Consulta</Text>
       </TouchableOpacity>
-
+      
       <TouchableOpacity 
         style={styles.verPerfilButton}
         onPress={() => navigation.navigate("PerfilProfissional", { profissionalId: item.id })}
