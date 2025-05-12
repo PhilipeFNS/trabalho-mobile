@@ -37,7 +37,6 @@ export default function CadastrarConsultaScreen({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [horarios, setHorarios] = useState([]);
   
-  // Arrays para criar o seletor de data personalizado
   const [meses] = useState([
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -45,12 +44,10 @@ export default function CadastrarConsultaScreen({ navigation }) {
   
   const diasDaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-  // Função para gerar dias do mês atual e próximos 2 meses
   const gerarDiasCalendario = () => {
     const hoje = new Date();
     const dias = [];
     
-    // Gerar dias para os próximos 3 meses
     for (let i = 0; i < 90; i++) {
       const data = new Date();
       data.setDate(hoje.getDate() + i);
@@ -157,7 +154,6 @@ export default function CadastrarConsultaScreen({ navigation }) {
     
     const userData = JSON.parse(userDataString);
     
-    // Enviar dados para a API
     await axios.post(`${API_URL}/horarios-disponiveis`, {
       profissional_id: userData.id,
       data: form.data.toISOString().split('T')[0],
@@ -249,7 +245,6 @@ export default function CadastrarConsultaScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          {/* Modal do seletor de data personalizado */}
           <Modal
             visible={showDatePicker}
             animationType="slide"
@@ -519,7 +514,6 @@ const styles = StyleSheet.create({
   loading: {
     marginVertical: 20,
   },
-  // Estilos para o seletor de data personalizado
   centeredView: {
     flex: 1,
     justifyContent: "center",

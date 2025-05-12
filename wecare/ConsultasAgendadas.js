@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Substitua pelo IP da sua máquina
 const API_URL = "http://192.168.0.36:3000";
 
 export default function ConsultasAgendadasScreen({ navigation }) {
@@ -48,7 +47,6 @@ export default function ConsultasAgendadasScreen({ navigation }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      // Formatar dados da resposta da API
       const consultasFormatadas = response.data.map(consulta => ({
         id: consulta.id,
         pacienteNome: consulta.paciente_nome,
@@ -64,7 +62,6 @@ export default function ConsultasAgendadasScreen({ navigation }) {
       
       setConsultas(consultasFormatadas);
       
-      // Obtém a data atual para mostrar as consultas do dia
       const today = new Date().toISOString().split("T")[0];
       setSelectedDate(today);
     } catch (error) {
@@ -86,7 +83,6 @@ export default function ConsultasAgendadasScreen({ navigation }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      // Atualiza localmente o status da consulta
       setConsultas(prevConsultas => {
         return prevConsultas.map(consulta => {
           if (consulta.id === consultaId) {
@@ -96,7 +92,6 @@ export default function ConsultasAgendadasScreen({ navigation }) {
         });
       });
       
-      // Se estiver vendo detalhes, atualiza também o estado dessa consulta
       if (selectedConsulta?.id === consultaId) {
         setSelectedConsulta({
           ...selectedConsulta,

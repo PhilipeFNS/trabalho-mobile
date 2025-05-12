@@ -12,7 +12,6 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-// Substitua pelo seu IP
 const API_URL = "http://192.168.0.36:3000";
 
 export default function AgendarConsulta({ navigation }) {
@@ -22,7 +21,6 @@ export default function AgendarConsulta({ navigation }) {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    // Carregar ID do usuário e buscar consultas
     const fetchUserData = async () => {
       try {
         const userDataString = await AsyncStorage.getItem('@WeCare:user');
@@ -88,7 +86,6 @@ export default function AgendarConsulta({ navigation }) {
                 headers: { Authorization: `Bearer ${token}` }
               });
               
-              // Recarrega as consultas para refletir o cancelamento
               fetchConsultas(userId);
               Alert.alert('Sucesso', 'Consulta cancelada com sucesso!');
             } catch (error) {

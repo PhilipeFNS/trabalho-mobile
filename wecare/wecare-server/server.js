@@ -418,19 +418,16 @@ app.post("/consultas", authenticateToken, async (req, res) => {
     
     console.log("Recebida solicitação de agendamento:", req.body);
     
-    // Verificar se o horário está disponível
     let horarioQuery;
     let horarioParams;
     
     if (horario_id) {
-      // Se temos o ID do horário, usamos ele diretamente
       horarioQuery = `
         SELECT id FROM horarios_disponiveis 
         WHERE id = ? AND disponivel = 1
       `;
       horarioParams = [horario_id];
     } else {
-      // Caso contrário, buscamos pelo profissional, data e faixa de horário
       horarioQuery = `
         SELECT id FROM horarios_disponiveis 
         WHERE profissional_id = ? AND data = ? AND horario_inicio = ? AND disponivel = 1
@@ -447,24 +444,20 @@ app.post("/consultas", authenticateToken, async (req, res) => {
     
     const horarioId = horarioDisponivel[0].id;
     
-    // Iniciar transação para garantir consistência
     await connection.beginTransaction();
     
-    // Inserir a consulta
     const [result] = await connection.query(`
       INSERT INTO consultas 
       (paciente_id, profissional_id, data, horario, status, online, valor) 
       VALUES (?, ?, ?, ?, 'agendado', ?, ?)
     `, [paciente_id, profissional_id, data, horario, online, valor]);
     
-    // Marcar o horário como indisponível
     await connection.query(`
       UPDATE horarios_disponiveis 
       SET disponivel = 0 
       WHERE id = ?
     `, [horarioId]);
     
-    // Commit da transação
     await connection.commit();
     
     console.log(`Consulta agendada com sucesso. ID: ${result.insertId}`);
@@ -474,7 +467,6 @@ app.post("/consultas", authenticateToken, async (req, res) => {
       mensagem: "Consulta agendada com sucesso"
     });
   } catch (error) {
-    // Rollback em caso de erro
     await connection.rollback();
     console.error("Erro ao agendar consulta:", error);
     res.status(500).json({ error: "Erro ao agendar consulta", details: error.message });
@@ -517,7 +509,6 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
     
     const connection = await pool.getConnection();
     
-    // Verificar se o profissional existe
     const [profissionais] = await connection.query(
       "SELECT id FROM usuarios WHERE id = ? AND tipo_usuario = 'profissional'", 
       [profissionalId]
@@ -528,7 +519,6 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
       return res.status(404).json({ error: "Profissional não encontrado" });
     }
     
-    // Buscar horários com tratamento adequado de datas
     const [horarios] = await connection.query(`
       SELECT 
         id,
@@ -547,17 +537,13 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
     
     console.log(`Encontrados ${horarios.length} horários disponíveis`);
     
-    // Agrupar por data para facilitar o uso no frontend
     const horariosAgrupados = {};
     
     horarios.forEach(horario => {
-      // Converter valor para número
       horario.valor = parseFloat(horario.valor || 0);
       
-      // Garantir que o campo online seja um booleano
       horario.online = horario.online === 1;
       
-      // Agrupar por data
       if (!horariosAgrupados[horario.data]) {
         horariosAgrupados[horario.data] = [];
       }
@@ -746,7 +732,6 @@ app.get("/profissionais", async (req, res) => {
   try {
     const connection = await pool.getConnection();
     
-    // Buscar profissionais com informações completas
     const [profissionais] = await connection.query(`
       SELECT 
         u.id,
@@ -778,7 +763,6 @@ app.get("/profissionais/:id", async (req, res) => {
     
     const connection = await pool.getConnection();
     
-    // Busca básica do profissional - sem joins complexos que podem falhar
     const [profissionais] = await connection.query(`
       SELECT 
         u.id,
@@ -806,7 +790,6 @@ app.get("/profissionais/:id", async (req, res) => {
       total_consultas_realizadas: 0
     };
     
-    // Buscar stats separadamente, com tratamento de erro para cada um
     try {
       const [horariosDisponiveis] = await connection.query(`
         SELECT COUNT(*) as total_horarios 
@@ -817,7 +800,6 @@ app.get("/profissionais/:id", async (req, res) => {
       profissional.total_horarios_disponiveis = horariosDisponiveis[0]?.total_horarios || 0;
     } catch (statError) {
       console.error("Erro ao buscar horários disponíveis:", statError);
-      // Continue - não falhe tudo apenas por essa estatística
     }
     
     try {
@@ -830,13 +812,10 @@ app.get("/profissionais/:id", async (req, res) => {
       profissional.total_consultas_realizadas = consultasRealizadas[0]?.total_consultas || 0;
     } catch (statError) {
       console.error("Erro ao buscar consultas realizadas:", statError);
-      // Continue - não falhe tudo apenas por essa estatística
     }
     
-    // Calcular idade se houver data de nascimento
     if (profissional.data_nascimento) {
       try {
-        // A data pode estar em vários formatos
         const nascimento = new Date(profissional.data_nascimento);
         const hoje = new Date();
         let idade = hoje.getFullYear() - nascimento.getFullYear();
@@ -847,7 +826,6 @@ app.get("/profissionais/:id", async (req, res) => {
         profissional.idade = idade;
       } catch (dateError) {
         console.error("Erro ao calcular idade:", dateError);
-        // Defina idade como null em caso de erro
         profissional.idade = null;
       }
     }
@@ -870,7 +848,6 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
     
     const connection = await pool.getConnection();
     
-    // Buscar horários com tratamento adequado de datas
     const [horarios] = await connection.query(`
       SELECT 
         id,
@@ -889,24 +866,19 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
     
     console.log(`Encontrados ${horarios.length} horários disponíveis`);
     
-    // Agrupar por data para facilitar o uso no frontend
     const horariosAgrupados = {};
     
     horarios.forEach(horario => {
       try {
-        // Garantir que o valor seja um número
         horario.valor = parseFloat(horario.valor || 0);
         
-        // Extrair a data no formato string YYYY-MM-DD
         let dataFormatada;
         
         if (horario.data instanceof Date) {
           dataFormatada = horario.data.toISOString().split('T')[0];
         } else if (typeof horario.data === 'string') {
-          // Se já for uma string (como '2023-05-24'), use diretamente
           dataFormatada = horario.data;
         } else {
-          // Caso seja outro formato, tente converter
           dataFormatada = new Date(horario.data).toISOString().split('T')[0];
         }
         
@@ -915,12 +887,10 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
         }
         horariosAgrupados[dataFormatada].push({
           ...horario,
-          // Certifique-se de que online seja um booleano para facilitar o uso no frontend
           online: horario.online === 1 || horario.online === true
         });
       } catch (itemError) {
         console.error("Erro ao processar horário:", itemError, horario);
-        // Pule este item e continue com os demais
       }
     });
     
@@ -937,12 +907,10 @@ app.get("/horarios-disponiveis/profissional/:id", async (req, res) => {
 
 
 
-// Endpoint para obter estatísticas para o dashboard do profissional
 app.get("/profissionais/:id/estatisticas", authenticateToken, async (req, res) => {
   try {
     const profissionalId = req.params.id;
     
-    // Verificar permissão
     if (req.user.id != profissionalId && req.user.tipo !== 'admin') {
       return res.status(403).json({ error: "Sem permissão para acessar estes dados" });
     }
@@ -950,17 +918,15 @@ app.get("/profissionais/:id/estatisticas", authenticateToken, async (req, res) =
     const connection = await pool.getConnection();
     const hoje = new Date().toISOString().split('T')[0];
     
-    // Consultas de hoje
     const [consultasHoje] = await connection.query(`
       SELECT COUNT(*) as total FROM consultas 
       WHERE profissional_id = ? AND data = ?
     `, [profissionalId, hoje]);
     
-    // Consultas da semana
     const dataInicio = new Date();
-    dataInicio.setDate(dataInicio.getDate() - dataInicio.getDay()); // Domingo desta semana
+    dataInicio.setDate(dataInicio.getDate() - dataInicio.getDay()); 
     const dataFim = new Date(dataInicio);
-    dataFim.setDate(dataInicio.getDate() + 6); // Sábado desta semana
+    dataFim.setDate(dataInicio.getDate() + 6); 
     
     const [consultasSemana] = await connection.query(`
       SELECT COUNT(*) as total FROM consultas 
@@ -972,7 +938,6 @@ app.get("/profissionais/:id/estatisticas", authenticateToken, async (req, res) =
       dataFim.toISOString().split('T')[0]
     ]);
     
-    // Novos agendamentos (últimas 24h)
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
     

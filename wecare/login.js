@@ -94,7 +94,7 @@ export default function LoginScreen({ navigation }) {
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#2e7d32"  // Mantendo a cor original
+            color="#2e7d32"
             style={{ marginTop: 10 }}
           />
         ) : (
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: "#2e7d32",  // Voltando para a cor original do projeto
+    color: "#2e7d32",
     marginBottom: 20,
     fontWeight: "bold",
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: "#2e7d32",  // Voltando para a cor original do projeto
+    backgroundColor: "#2e7d32",
     padding: 10,
     borderRadius: 5,
     width: "100%",
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   forgotPassword: {
-    color: "#2e7d32",  // Voltando para a cor original do projeto
+    color: "#2e7d32",
     marginTop: 10,
     fontSize: 14,
   },

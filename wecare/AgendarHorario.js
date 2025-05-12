@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-// Substitua pelo seu IP
 const API_URL = "http://192.168.0.36:3000";
 
 export default function AgendarHorarioScreen({ route, navigation }) {
@@ -29,14 +28,12 @@ export default function AgendarHorarioScreen({ route, navigation }) {
   useEffect(() => {
     const carregarDados = async () => {
   try {
-    // Carregar dados do usuário
     const userDataString = await AsyncStorage.getItem('@WeCare:user');
     if (userDataString) {
       setUserData(JSON.parse(userDataString));
     }
 
     try {
-      // Carregar detalhes do médico
       console.log(`Buscando dados do profissional ID: ${medicoId}`);
       const response = await axios.get(`${API_URL}/profissionais/${medicoId}`);
       console.log("Dados do profissional recebidos com sucesso");
@@ -44,11 +41,9 @@ export default function AgendarHorarioScreen({ route, navigation }) {
     } catch (profErr) {
       console.error("Erro ao carregar dados do profissional:", profErr);
       Alert.alert('Aviso', 'Não foi possível carregar todos os detalhes do profissional.');
-      // Continue mesmo com erro - podemos mostrar horários mesmo sem os detalhes completos
     }
 
     try {
-      // Carregar horários disponíveis
       console.log(`Buscando horários do profissional ID: ${medicoId}`);
       const horariosResponse = await axios.get(
         `${API_URL}/horarios-disponiveis/profissional/${medicoId}`
@@ -57,7 +52,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
       
       setHorarios(horariosResponse.data || {});
 
-      // Selecionar primeira data disponível, se houver
       const datasDisponiveis = Object.keys(horariosResponse.data || {});
       if (datasDisponiveis.length > 0) {
         setSelectedDate(datasDisponiveis[0]);
@@ -102,7 +96,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
       return;
     }
 
-    // Certifique-se de que o valor é tratado como número
     const valorNumerico = parseFloat(selectedHorario.valor || 0);
     
     console.log("Enviando agendamento:", {
@@ -115,7 +108,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
       online: selectedHorario.online === 1
     });
 
-    // Enviar solicitação de agendamento
     const response = await axios.post(
       `${API_URL}/consultas`,
       {
@@ -140,7 +132,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
       [{ 
         text: 'OK', 
         onPress: () => {
-          // Remover o horário selecionado da lista
           const novaListaHorarios = {...horarios};
           novaListaHorarios[selectedDate] = horarios[selectedDate].filter(
             h => h.id !== selectedHorario.id
@@ -148,7 +139,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
           setHorarios(novaListaHorarios);
           setSelectedHorario(null);
           
-          // Navegar para a tela HomePaciente (tela principal)
           navigation.reset({
             index: 0,
             routes: [{ name: 'HomePaciente' }],
@@ -170,7 +160,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
   }
 };
 
-  // Agrupamento de datas por mês para o calendário
   const agruparDatasPorMes = () => {
     const meses = {};
     Object.keys(horarios).forEach(data => {
@@ -186,7 +175,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
 
   const mesesAgrupados = agruparDatasPorMes();
 
-  // Renderizar a tela de carregamento
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -195,7 +183,6 @@ export default function AgendarHorarioScreen({ route, navigation }) {
     );
   }
 
-  // Renderizar mensagem quando não há horários disponíveis
   if (Object.keys(horarios).length === 0) {
     return (
       <View style={styles.container}>

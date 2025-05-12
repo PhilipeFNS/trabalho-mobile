@@ -12,7 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Substitua pelo seu IP
 const API_URL = "http://192.168.0.36:3000";
 
 export default function HomeProfissionalScreen({ navigation }) {
@@ -40,7 +39,6 @@ export default function HomeProfissionalScreen({ navigation }) {
     } catch (error) {
       console.error("Erro ao carregar estatísticas:", error);
       
-      // Falha silenciosa - mostra estatísticas zeradas em vez de quebrar a tela
       setStats({
         consultasHoje: 0,
         consultasSemana: 0,
@@ -52,7 +50,6 @@ export default function HomeProfissionalScreen({ navigation }) {
   useEffect(() => {
     const getUserData = async () => {
       try {
-        // Buscar dados do usuário no AsyncStorage
         const userDataString = await AsyncStorage.getItem("@WeCare:user");
         const token = await AsyncStorage.getItem("@WeCare:token");
         
@@ -76,7 +73,6 @@ export default function HomeProfissionalScreen({ navigation }) {
         const userObj = JSON.parse(userDataString);
         setUserData(userObj);
         
-        // Carregar estatísticas do backend usando o ID do profissional
         await carregarEstatisticas(userObj.id, token);
       } catch (error) {
         console.error("Erro ao obter dados do usuário:", error);
@@ -87,7 +83,6 @@ export default function HomeProfissionalScreen({ navigation }) {
 
     getUserData();
     
-    // Configurar atualização periódica das estatísticas (a cada 5 minutos)
     const intervalId = setInterval(async () => {
       try {
         const userDataString = await AsyncStorage.getItem("@WeCare:user");
@@ -100,15 +95,12 @@ export default function HomeProfissionalScreen({ navigation }) {
       } catch (error) {
         console.error("Erro ao atualizar estatísticas:", error);
       }
-    }, 300000); // 5 minutos em milissegundos
+    }, 300000);
     
-    // Limpar o intervalo quando o componente for desmontado
     return () => clearInterval(intervalId);
   }, []);
 
-  // Configurar atualizações quando a tela receber foco
   useEffect(() => {
-    // Função para atualizar dados quando a tela receber foco
     const refreshOnFocus = navigation.addListener('focus', async () => {
       try {
         const userDataString = await AsyncStorage.getItem("@WeCare:user");
