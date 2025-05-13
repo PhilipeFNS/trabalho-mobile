@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = "http://192.168.0.36:3000";
+const API_URL = "http://192.168.92.16:3000";
 
 export default function AgendarConsulta({ navigation }) {
   const [consultas, setConsultas] = useState([]);

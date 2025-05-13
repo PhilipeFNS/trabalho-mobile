@@ -14,7 +14,7 @@ import { MaskedTextInput } from "react-native-mask-text";
 import axios from "axios";
 import { Picker } from "@react-native-picker/picker";
 
-const API_URL = "http://192.168.0.36:3000";
+const API_URL = "http://192.168.92.16:3000";
 
 export default function CadastroScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
@@ -178,7 +178,7 @@ export default function CadastroScreen({ navigation }) {
               style={styles.passwordInput}
             />
           </View>
-          <View style={{ height: 20 }} />{" "}
+          <View style={{ height: 20 }} />
           <Text style={styles.label}>Tipo de Usuário:</Text>
           <View style={styles.radioGroupHorizontal}>
             <TouchableOpacity
