@@ -12,7 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = "http://192.168.92.16:3000";
+<<<<<<< HEAD
+const API_URL = "http://192.168.0.36:3000";
+=======
+const API_URL = "http://192.168.0.36:3000";
+>>>>>>> 58aa0e640ba9b001ac23d0fe906f80602caa81e2
 
 export default function HomeProfissionalScreen({ navigation }) {
   const [userData, setUserData] = useState(null);

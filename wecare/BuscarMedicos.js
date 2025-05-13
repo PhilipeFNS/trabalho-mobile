@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.92.16:3000";
+const API_URL = "http://192.168.0.36:3000";
 
 export default function BuscarMedicosScreen({ navigation }) {
   const [loading, setLoading] = useState(false);

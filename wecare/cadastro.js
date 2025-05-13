@@ -14,7 +14,11 @@ import { MaskedTextInput } from "react-native-mask-text";
 import axios from "axios";
 import { Picker } from "@react-native-picker/picker";
 
-const API_URL = "http://192.168.92.16:3000";
+<<<<<<< HEAD
+const API_URL = "http://192.168.0.36:3000";
+=======
+const API_URL = "http://192.168.0.36:3000";
+>>>>>>> 58aa0e640ba9b001ac23d0fe906f80602caa81e2
 
 export default function CadastroScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
